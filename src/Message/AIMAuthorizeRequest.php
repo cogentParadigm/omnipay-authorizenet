@@ -62,44 +62,54 @@ class AIMAuthorizeRequest extends AIMAbstractRequest
             return;
         }
 
-        // Try trackData first.
-
-        $creditCard = $this->getCard();
-
-        if (($track1 = $creditCard->getTrack1())
-            && ($track2 = $creditCard->getTrack2())
-        ) {
-            $data
-                ->transactionRequest
-                ->payment
-                ->trackData
-                ->track1 = $track1;
-
-            $data
-                ->transactionRequest
-                ->payment
-                ->trackData
-                ->track2 = $track2;
+        if ($bankAccount = $this->getBankAccount()) {
+            $bankAccount->validate();
+            $data->transactionRequest->payment->bankAccount->accountType = $this->getBankAccount()->getBankAccountType();
+            $data->transactionRequest->payment->bankAccount->routingNumber = $this->getBankAccount()->getRoutingNumber();
+            $data->transactionRequest->payment->bankAccount->accountNumber = $this->getBankAccount()->getAccountNumber();
+            $data->transactionRequest->payment->bankAccount->nameOnAccount = $this->getBankAccount()->getName();
+            $data->transactionRequest->payment->bankAccount->echeckType = "WEB";
         } else {
-            // Validate the standard credit card number.
-            $this->validate('card');
 
-            /** @var CreditCard $card */
-            $card = $this->getCard();
-            $card->validate();
-            $data
-                ->transactionRequest
-                ->payment
-                ->creditCard
-                ->cardNumber = $card->getNumber();
-            $data
-                ->transactionRequest
-                ->payment
-                ->creditCard
-                ->expirationDate = $card->getExpiryDate('my');
+            // Try trackData first.
 
-            if (!empty($card->getCvv())) {
-                $data->transactionRequest->payment->creditCard->cardCode = $card->getCvv();
+            $creditCard = $this->getCard();
+
+            if (($track1 = $creditCard->getTrack1())
+                && ($track2 = $creditCard->getTrack2())
+            ) {
+                $data
+                    ->transactionRequest
+                    ->payment
+                    ->trackData
+                    ->track1 = $track1;
+
+                $data
+                    ->transactionRequest
+                    ->payment
+                    ->trackData
+                    ->track2 = $track2;
+            } else {
+                // Validate the standard credit card number.
+                $this->validate('card');
+
+                /** @var CreditCard $card */
+                $card = $this->getCard();
+                $card->validate();
+                $data
+                    ->transactionRequest
+                    ->payment
+                    ->creditCard
+                    ->cardNumber = $card->getNumber();
+                $data
+                    ->transactionRequest
+                    ->payment
+                    ->creditCard
+                    ->expirationDate = $card->getExpiryDate('my');
+
+                if (!empty($card->getCvv())) {
+                    $data->transactionRequest->payment->creditCard->cardCode = $card->getCvv();
+                }
             }
         }
     }
@@ -165,7 +175,7 @@ class AIMAuthorizeRequest extends AIMAbstractRequest
     {
         return $this->setParameter('deviceType', $value);
     }
-    
+
     public function getMarketType()
     {
         return $this->getParameter('marketType');
