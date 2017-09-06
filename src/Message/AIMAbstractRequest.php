@@ -7,6 +7,7 @@ use Omnipay\AuthorizeNet\Model\TransactionReference;
 use Omnipay\Common\CreditCard;
 use Omnipay\Common\Exception\InvalidRequestException;
 use Omnipay\Common\Message\AbstractRequest;
+use Omnipay\AuthorizeNet\BankAccount;
 
 /**
  * Authorize.Net AIM Abstract Request
@@ -150,6 +151,21 @@ abstract class AIMAbstractRequest extends AbstractRequest
         return $value;
     }
 
+    public function getBankAccount()
+    {
+        return $this->getParameter('bankAccount');
+    }
+
+    public function setBankAccount($value)
+    {
+        if ($value && !$value instanceof BankAccount) {
+            $value = new BankAccount($value);
+        }
+
+        return $this->setParameter('bankAccount', $value);
+    }
+
+
     public function getInvoiceNumber()
     {
         return $this->getParameter('invoiceNumber');
@@ -274,7 +290,11 @@ abstract class AIMAbstractRequest extends AbstractRequest
         //$req->order->description = $this->getDescription();
 
         /** @var CreditCard $card */
-        if ($card = $this->getCard()) {
+        $card = $this->getCard();
+        if (!$card) {
+            $card = $this->getBankAccount();
+        }
+        if ($card) {
             // A card is present, so include billing and shipping details
             $req->customer->email = $card->getEmail();
 

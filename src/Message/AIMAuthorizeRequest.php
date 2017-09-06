@@ -35,13 +35,21 @@ class AIMAuthorizeRequest extends AIMAbstractRequest
             return;
         }
 
-        $this->validate('card');
-        /** @var CreditCard $card */
-        $card = $this->getCard();
-        $card->validate();
-        $data->transactionRequest->payment->creditCard->cardNumber = $card->getNumber();
-        $data->transactionRequest->payment->creditCard->expirationDate = $card->getExpiryDate('my');
-        $data->transactionRequest->payment->creditCard->cardCode = $card->getCvv();
+        if ($bankAccount = $this->getBankAccount()) {
+            $bankAccount->validate();
+            $data->transactionRequest->payment->bankAccount->accountType = $this->getBankAccount()->getBankAccountType();
+            $data->transactionRequest->payment->bankAccount->routingNumber = $this->getBankAccount()->getRoutingNumber();
+            $data->transactionRequest->payment->bankAccount->accountNumber = $this->getBankAccount()->getAccountNumber();
+            $data->transactionRequest->payment->bankAccount->nameOnAccount = $this->getBankAccount()->getName();
+            $data->transactionRequest->payment->bankAccount->echeckType = "WEB";
+        } else {
+            $this->validate('card');
+            $card = $this->getCard();
+            $card->validate();
+            $data->transactionRequest->payment->creditCard->cardNumber = $card->getNumber();
+            $data->transactionRequest->payment->creditCard->expirationDate = $card->getExpiryDate('my');
+            $data->transactionRequest->payment->creditCard->cardCode = $card->getCvv();
+        }
     }
 
     protected function addCustomerIP(\SimpleXMLElement $data)
